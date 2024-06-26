@@ -1,0 +1,46 @@
+﻿version: "2.4"
+
+services:
+  # main service
+  lupuserv-app:
+    #image: nefarius.azurecr.io/lupuserv:latest
+    build: .
+    container_name: lupuserv-app
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Vienna
+      - Service__Gateway=ClickSend
+      - Service__ClickSend__Username=<YourClickSendUsername>
+      - Service__ClickSend__Token=<YourClickSendToken>
+    volumes:
+      - ./appsettings.json:/app/appsettings.json:ro
+    ports:
+      - 2025:2025
+    networks:
+      - database
+    depends_on: 
+      - lupuserv-ferretdb
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # MongoDB compatibility wrapper
+  lupuserv-ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:1.17.0
+    container_name: lupuserv-ferretdb
+    restart: unless-stopped
+    volumes:
+      - ./data/sqlite:/data
+    environment:
+      - FERRETDB_HANDLER=sqlite
+      - FERRETDB_SQLITE_URL=file:/data/
+    networks:
+      - database
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+      
+networks:
+  database:
